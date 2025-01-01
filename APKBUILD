@@ -1,5 +1,6 @@
 # Contributor: Marian Buschsieweke <marian.buschsieweke@posteo.net>
 # Maintainer: Marian Buschsieweke <marian.buschsieweke@posteo.net>
+# Modified: Martin Hübner <martin.hubner@web.de>
 pkgname=gnuradio
 pkgver=3.10.11.0
 pkgrel=2
