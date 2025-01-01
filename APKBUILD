@@ -20,6 +20,8 @@ depends="
 	py3-qt5
 	py3-scipy
 	py3-yaml
+	py3-pyzmq
+	cppzmq
 	"
 depends_dev="
 	blas-dev
@@ -67,9 +69,10 @@ build() {
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
-		-DENABLE_GRC=ON \
-		-DENABLE_GR_QTGUI=ON \
+		-DENABLE_GRC=OFF \
+		-DENABLE_GR_QTGUI=OFF \
 		-DENABLE_PYTHON=ON \
+		-DENABLE_GR_ZEROMQ=ON \
 		-Wno-dev
 	cmake --build build
 }
@@ -86,9 +89,6 @@ check() {
 			-e '/add_test(qa_rotator_cc /d'
 		;;
 	esac
-	# module 'PyQt5.Qt' has no attribute 'QValidator'
-	sed -i build/gr-qtgui/python/qtgui/CTestTestfile.cmake \
-		-e '/add_test(qa_qtgui /d'
 	# filter_qa_fir_filter_with_buffer.cc: failing GLIBCXX assertion
 	# needs pygccxml
 	timeout 600 \
