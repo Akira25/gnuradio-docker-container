@@ -11,14 +11,11 @@ url="https://www.gnuradio.org"
 arch="all !loongarch64 !ppc64le !s390x"
 license="GPL-3.0-or-later"
 depends="
-	py3-cairo
 	py3-click
 	py3-click-plugins
 	py3-gobject3
 	py3-mako
 	py3-numpy
-	py3-qtgraph
-	py3-qt5
 	py3-scipy
 	py3-yaml
 	py3-pyzmq
@@ -31,26 +28,19 @@ depends_dev="
 	gmp-dev
 	gsl-dev
 	gsm-dev
-	gtk+3.0-dev
 	libsndfile-dev
 	mpir-dev
-	portaudio-dev
 	py3-numpy-dev
 	py3-pybind11-dev
 	py3-sphinx
 	python3-dev
-	qt5-qtbase-dev
-	qwt-dev
-	soapy-sdr-dev
 	spdlog-dev
 	thrift-dev
-	uhd-dev
 	zeromq-dev
 	"
 makedepends="
 	$depends_dev
 	cmake
-	doxygen
 	graphviz
 	libvolk-dev
 	samurai
@@ -67,14 +57,20 @@ build() {
 	# function body can be overwritten at link time
 	export CXXFLAGS="$CXXFLAGS -flto=auto -U_FORTIFY_SOURCE"
 	cmake -B build -G Ninja \
-		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_INSTALL_LIBDIR=lib \
-		-DENABLE_GRC=OFF \
-		-DENABLE_GR_QTGUI=OFF \
-		-DENABLE_PYTHON=ON \
-		-DENABLE_GR_ZEROMQ=ON \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo 	\
+		-DCMAKE_INSTALL_PREFIX=/usr 		\
+		-DCMAKE_INSTALL_LIBDIR=lib 			\
+		-DENABLE_PYTHON=ON 					\
+		-DENABLE_GR_ZEROMQ=ON 				\
+		-DENABLE_GR_AUDIO=OFF	 			\
+		-DENABLE_DOXYGEN=OFF				\
+		-DENABLE_GRC=OFF 					\
+		-DENABLE_GR_QTGUI=OFF 				\
+		-DENABLE_GR_SOAPY=OFF				\
+		-DENABLE_GR_UHD=OFF					\
+		-DENABLE_GR_VIDEO_SDL=OFF			\
 		-Wno-dev
+	# cmake -LAH  # show all vars that get configured by cmake
 	cmake --build build
 }
 
