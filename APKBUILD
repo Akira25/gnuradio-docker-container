@@ -1,7 +1,12 @@
 # Contributor: Marian Buschsieweke <marian.buschsieweke@posteo.net>
 # Maintainer: Marian Buschsieweke <marian.buschsieweke@posteo.net>
 # Modified: Martin Hübner <martin.hubner@web.de>
+# pkgname=gnuradio-minimal
 pkgname=gnuradio
+# This package strips gnuradio down to a minimized version. It omits
+# everything related to: Audio, Graphics, Docs and SDR-drivers. IO to
+# flowgraphs can be handled by zmq sockets instead. SDRs and Audio to
+# be handled by flowgraphs running on the host system.
 pkgver=3.10.11.0
 pkgrel=2
 pkgdesc="General purpose DSP and SDR toolkit"
