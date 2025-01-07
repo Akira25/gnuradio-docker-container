@@ -36,8 +36,7 @@ RUN apk add --no-cache zeromq py3-pyzmq
 FROM alpine_gr
 
 # uncomment for different demonstrations
-#COPY /zmq_fm_transceiver.py /app/flowgraph.py
-COPY demo_send_binaural_beat.py /app/flowgraph.py
-#COPY nfm_reiceiver.py /app/flowgraph.py
+COPY flowgraphs/demo_send_binaural_beat.py /app/flowgraph.py
+#COPY flowgraphs/nfm_reiceiver.py /app/flowgraph.py
 
 CMD ["/app/flowgraph.py"]
