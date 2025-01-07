@@ -31,12 +31,3 @@ FROM alpine:3.21 AS alpine_gr
 COPY --from=build /home/abuild/packages/x86_64/gnuradio-3.10.11.0-r2.apk /gnuradio_apks/
 RUN apk add --allow-untrusted --no-cache /gnuradio_apks/gnuradio-3.10.11.0-r2.apk
 RUN apk add --no-cache zeromq py3-pyzmq
-
-# Final image
-FROM alpine_gr
-
-# uncomment for different demonstrations
-COPY flowgraphs/demo_send_binaural_beat.py /app/flowgraph.py
-#COPY flowgraphs/nfm_reiceiver.py /app/flowgraph.py
-
-CMD ["/app/flowgraph.py"]
