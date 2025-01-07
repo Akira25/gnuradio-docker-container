@@ -4,11 +4,19 @@ name: Publish Docker image
 
 on:
   release:
-    types: [published]
+    types:
+      - published
+      - released
   push:
-    branches: [ "main", "test" ]
+    branches:
+      - main
+      - test
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ "main", "test" ]
+    branches:
+      - main
+      - test
 
 jobs:
   push_to_registry:
@@ -31,7 +39,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        uses: docker/metadata-action@v5
         with:
           images: akira25/gnuradio-docker-container
 
@@ -41,6 +49,6 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          push: ${{ github.ref_name == 'main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
