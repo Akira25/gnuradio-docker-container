@@ -7,6 +7,10 @@
 # Then, build a container from that.
 #
 
+LABEL org.opencontainers.image.source=https://github.com/Akira25/gnuradio-docker-container
+LABEL org.opencontainers.image.description="A minimal (headless) GNU Radio, packed into an alpine docker container"
+LABEL org.opencontainers.image.licenses=MIT
+
 FROM alpine:3.21 AS build
 WORKDIR /gnuradio
 RUN apk add alpine-sdk doas
