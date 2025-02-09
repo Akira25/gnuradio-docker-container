@@ -24,7 +24,13 @@ jobs:
           - dockerfile: ./alpine/3.10/Dockerfile
             image: ghcr.io/akira25/gnuradio-docker-container
             context: ./alpine/3.10/
-            tag: 3.10-alpine
+            # multiple tags for multiple registries:
+            # https://docs.docker.com/build/ci/github-actions/push-multi-registries/
+            tags: |
+              akira25/gnuradio-docker-container:3.10-alpine
+              akira25/gnuradio-docker-container:latest
+              ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
+              ghcr.io/akira25/gnuradio-docker-container:latest
           #- dockerfile: ./debian/3.10/Dockerfile
           #  image: ghcr.io/akira25/gnuradio-docker-container
           #  context: ./debian/3.10/
@@ -35,16 +41,9 @@ jobs:
       attestations: write
       id-token: write
     steps:
-      - name: Set repository name lowercase for image name
-        run: |
-          echo "REPO_LC=${REPO,,}" >>${GITHUB_ENV}
-        env:
-          REPO: '${{ github.repository }}'
-
       - name: Checkout repository
         uses: actions/checkout@v4
-      # Uses the `docker/login-action` action to log in to the Container registry using the account and
-      # password that will publish the packages. Once published, the packages are scoped to the account defined here.
+
       - name: Log in to ghcr.io
         uses: docker/login-action@v3
         with:
@@ -52,22 +51,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      #- name: Log in to Docker Hub
-      #  uses: docker/login-action@v3
-      #  with:
-      #    username: ${{ secrets.DOCKER_USERNAME }}
-      #    password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) to extract tags and labels that will be applied to the specified image. The `id` "meta" allows the output of this step to be referenced in a subsequent step. The `images` value provides the base name for the tags and labels.
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ matrix.image }}
 
-      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
-      # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see [Usage](https://github.com/docker/build-push-action#usage) in the README of the `docker/build-push-action` repository.
-      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6
@@ -75,5 +70,6 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
-          tags: ghcr.io/${{ env.REPO_LC }}:${{ matrix.tag }}
+          # platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: ${{ matrix.tags }}
           labels: ${{ steps.meta.outputs.labels }}
