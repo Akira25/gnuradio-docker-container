@@ -26,6 +26,8 @@ $ docker run --rm --network=host akira25/gnuradio-docker-container:test
 $ ./receiver.py
 ```
 
+You can find further information on this demo in the section _Demonstration_.
+
 ## Architectural goals
 
 We want to achieve running even old flowgraphs seamlessly, as their dependencies get included in the container. This might come in very handy in the long term.
@@ -48,7 +50,7 @@ To circumvent complicated redirections, e.g., with audio or USB devices, we expe
 
 ## Demonstration
 
-To test this out on your computer, follow this section's steps. We used `podman` as the container runtime. Still, you should be able to run these commands perfectly with docker by just replacing `podman` with the `docker` command:
+To build a demonstration on your computer, follow this section's steps. We used `podman` as the container runtime. Still, you should be able to run these commands perfectly with docker by just replacing `podman` with the `docker` command:
 
 ```sh
 # Build the container from Dockerfile
@@ -59,7 +61,7 @@ $ podman run --network=host 59f3c95578b3  # substitue this with the ID of your i
 $ ./receiver.py
 ```
 
-You may also start the `receiver` flowgraph from your GNU Radio companion. By running this setup, you can hear a binaural beat at 440 Hz. The signal is generated within the flowgraph and sent via the ZMQ sockets to the host part.
+You should also start the `receiver` flowgraph from your local GNU Radio companion. By running this setup, you can hear a binaural beat at 440 Hz. The signal is generated within the flowgraph and sent via the ZMQ sockets to the host part.
 
 The Dockerfile at `/alpine/3.10/Dockerfile` generates the docker image containing the GNU Radio runtime. Depending on your build host, this takes roughly 15 to 30 minutes.
 
