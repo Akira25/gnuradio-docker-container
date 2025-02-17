@@ -125,17 +125,24 @@ jobs:
               ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-arm64-debian
           done
 
-      #- name: Cleanup Platform Tags
-      #  run: |
-      #    set -e
-      #    TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
-      #      -d '{"username": "'${{ secrets.DOCKERHUB_USERNAME }}'", "password": "'${{ secrets.DOCKERHUB_PASSWORD }}'"}' \
-      #      https://hub.docker.com/v2/users/login/ | jq -r .token)
-      #
-      #    for arch in amd64 arm64; do
-      #      IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DHUB_REPO }}/tags/${{ env.GR_VERSION }}-${arch}/"
-      #      curl -X DELETE -H "Authorization: Bearer ${TOKEN}" ${IMAGE_URL} || echo "Failed to delete ${arch} tag"
-      #    done
+      - name: Cleanup Platform Tags
+        run: |
+          set -e
+          TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"username": "'${{ secrets.DOCKERHUB_USERNAME }}'", "password": "'${{ secrets.DOCKERHUB_PASSWORD }}'"}' \
+            https://hub.docker.com/v2/users/login/ | jq -r .token)
+
+          # delete alpine-intermediate tags
+          for arch in amd64 arm64; do
+            IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DHUB_REPO }}/tags/${{ env.GR_VERSION }}-${arch}-alpine/"
+            curl -X DELETE -H "Authorization: Bearer ${TOKEN}" ${IMAGE_URL} || echo "Failed to delete ${arch} tag"
+          done
+
+          # delete debian-intermediate tags
+          for arch in amd64 arm64; do
+            IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DHUB_REPO }}/tags/${{ env.GR_VERSION }}-${arch}-debian/"
+            curl -X DELETE -H "Authorization: Bearer ${TOKEN}" ${IMAGE_URL} || echo "Failed to delete ${arch} tag"
+          done
 
       #- name: Verify Image
       #  uses: addnab/docker-run-action@v3
