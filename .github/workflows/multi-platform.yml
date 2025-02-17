@@ -176,36 +176,8 @@ jobs:
       - name: Cleanup Platform Tags (ghcr)
         run: |
           set -e
-          TOKEN=${{ secrets.GHCR_PAT }}
-          OWNER=${{ github.repository_owner }}
-
-          # delete alpine-intermediate tags
-          for arch in amd64 arm64; do
-            IMAGE_URL="https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/manifests/${{ env.GR_VERSION }}-${arch}-alpine"
-            DIGEST=$(curl -s -H "Authorization: Bearer ${TOKEN}" -H "Accept: application/vnd.oci.image.index.v1+json" \
-              "https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/tags/list" | jq -r ".manifest.${{ env.GR_VERSION }}-${arch}-alpine.digest")
-
-            if [ -n "$DIGEST" ] && [ "$DIGEST" != "null" ]; then
-              curl -X DELETE -H "Authorization: Bearer ${TOKEN}" "https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/manifests/${DIGEST}" \
-                || echo "Failed to delete ${arch} alpine tag"
-            else
-              echo "No matching alpine tag found for ${arch}"
-            fi
-          done
-
-          # delete debian-intermediate tags
-          for arch in amd64 arm64; do
-            IMAGE_URL="https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/manifests/${{ env.GR_VERSION }}-${arch}-debian"
-            DIGEST=$(curl -s -H "Authorization: Bearer ${TOKEN}" -H "Accept: application/vnd.oci.image.index.v1+json" \
-              "https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/tags/list" | jq -r ".manifest.${{ env.GR_VERSION }}-${arch}-debian.digest")
-
-            if [ -n "$DIGEST" ] && [ "$DIGEST" != "null" ]; then
-              curl -X DELETE -H "Authorization: Bearer ${TOKEN}" "https://ghcr.io/v2/${OWNER}/${{ env.GHCR_REPO }}/manifests/${DIGEST}" \
-                || echo "Failed to delete ${arch} debian tag"
-            else
-              echo "No matching debian tag found for ${arch}"
-            fi
-          done
+          .github/workflows/scripts/ghcr-prune.py --container gnuradio-docker-container --prune-tag arm64 --prune-age 7
+          .github/workflows/scripts/ghcr-prune.py --container gnuradio-docker-container --prune-tag amd64 --prune-age 7
 
       #- name: Verify Image
       #  uses: addnab/docker-run-action@v3
