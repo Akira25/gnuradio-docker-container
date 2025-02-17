@@ -4,16 +4,16 @@ on:
   release:
     types: [published]
   push:
-    branches: [ "main", "test" ]
+    branches: [ "main", "test", "test2" ]
   pull_request:
     branches: [ "main", "test" ]
 
 env:
-  DOCKER_REGISTRY: docker.io
-  DOCKER_IMAGE: akira25/gnuradio-docker-container
+  DHUB_REGISTRY: docker.io
+  DHUB_REPO: akira25/${{ github.repository }}
   GR_VERSION: "3.10"
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  GHCR_REGISTRY: ghcr.io
+  GHCR_REPO: ghcr.io/${{ github.repository }}
 
 permissions:
   contents: read
@@ -27,12 +27,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, ubuntu-24.04-arm]
+        runner:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+        image:
+          - alpine-3.10
+          - debian-3.10
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+          - image: alpine-3.10
+            context: ./alpine/3.10/
+            base_os: alpine
+            #name: ghcr.io/akira25/gnuradio-docker-container
+            # multiple tags for multiple registries:
+            # https://docs.docker.com/build/ci/github-actions/push-multi-registries/
+            tags: |
+              akira25/gnuradio-docker-container:3.10-alpine
+              akira25/gnuradio-docker-container:latest
+            #  ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
+            #  ghcr.io/akira25/gnuradio-docker-container:latest
+          #- image: debian-3.10
+          #  dockerfile: ./debian/3.10/Dockerfile
+          #  base_os: debian
+          #  name: ghcr.io/akira25/gnuradio-docker-container
+          #  context: ./debian/3.10/
+          #  tags: |
+          #    akira25/gnuradio-docker-container:3.10-debian
+          #    ghcr.io/akira25/gnuradio-docker-container:3.10-debian
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -58,22 +82,22 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}
+          images: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}
 
       - name: Build and Push Platform Image
         id: build-platform
         uses: docker/build-push-action@v6
         with:
-          context: ./alpine/3.10/
-          file: ./alpine/3.10/Dockerfile
-          no-cache: true
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.context }}/Dockerfile
+          # no-cache: true
           platforms: ${{ matrix.platform }}
           push: true
           provenance: false
-          #tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.GR_VERSION }}-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
-          tags: |
-            akira25/gnuradio-docker-container:3.10-alpine
-            akira25/gnuradio-docker-container:latest
+          tags: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}-${{ matrix.image.base_os }}
+          #tags: |
+          #  akira25/gnuradio-docker-container:3.10-alpine
+          #  akira25/gnuradio-docker-container:latest
           #  ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
           #  ghcr.io/akira25/gnuradio-docker-container:latest
           labels: ${{ steps.meta.outputs.labels }}
@@ -92,11 +116,16 @@ jobs:
 
       - name: Create Multi-arch Manifests
         run: |
-          for tag in ${{ env.GR_VERSION }}-alpine latest; do
-            docker buildx imagetools create -t ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${tag} \
-              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.GR_VERSION }}-amd64 \
-              ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.GR_VERSION }}-arm64
+          for tag in ${{ env.GR_VERSION }} latest; do
+            docker buildx imagetools create -t ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${tag} \
+              ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-amd64 \
+              ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-arm64
           done
+        #  for tag in ${{ env.GR_VERSION }}-debian; do
+        #    docker buildx imagetools create -t ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${tag} \
+        #      ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-amd64-debian \
+        #      ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-arm64-debian
+        #  done
 
       #- name: Cleanup Platform Tags
       #  run: |
@@ -106,14 +135,14 @@ jobs:
       #      https://hub.docker.com/v2/users/login/ | jq -r .token)
       #
       #    for arch in amd64 arm64; do
-      #      IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DOCKER_IMAGE }}/tags/${{ env.GR_VERSION }}-${arch}/"
+      #      IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DHUB_REPO }}/tags/${{ env.GR_VERSION }}-${arch}/"
       #      curl -X DELETE -H "Authorization: Bearer ${TOKEN}" ${IMAGE_URL} || echo "Failed to delete ${arch} tag"
       #    done
 
       #- name: Verify Image
       #  uses: addnab/docker-run-action@v3
       #  with:
-      #    image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.GR_VERSION }}
+      #    image: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}
       #    shell: bash
       #    run: |
       #      timeout 30s /entrypoint.sh &
