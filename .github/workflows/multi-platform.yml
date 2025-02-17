@@ -1,0 +1,150 @@
+name: Build and publish a Docker image to ghcr.io and dockerhub
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [ "main", "test", "test2" ]
+  pull_request:
+    branches: [ "main", "test" ]
+
+env:
+  DHUB_REGISTRY: docker.io
+  DHUB_REPO: ${{ github.repository }}
+  GR_VERSION: "3.10"
+  GHCR_REGISTRY: ghcr.io
+  GHCR_REPO: ghcr.io/${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build Platform Image
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+        image:
+          - alpine-3.10
+          - debian-3.10
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+          - image: alpine-3.10
+            context: ./alpine/3.10/
+            base_os: alpine
+            #name: ghcr.io/akira25/gnuradio-docker-container
+            # multiple tags for multiple registries:
+            # https://docs.docker.com/build/ci/github-actions/push-multi-registries/
+            tags: |
+              akira25/gnuradio-docker-container:3.10-alpine
+              akira25/gnuradio-docker-container:latest
+            #  ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
+            #  ghcr.io/akira25/gnuradio-docker-container:latest
+          #- image: debian-3.10
+          #  dockerfile: ./debian/3.10/Dockerfile
+          #  base_os: debian
+          #  name: ghcr.io/akira25/gnuradio-docker-container
+          #  context: ./debian/3.10/
+          #  tags: |
+          #    akira25/gnuradio-docker-container:3.10-debian
+          #    ghcr.io/akira25/gnuradio-docker-container:3.10-debian
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout Github code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.runner.platform }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}
+
+      - name: Build and Push Platform Image
+        id: build-platform
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.context }}/Dockerfile
+          # no-cache: true
+          platforms: ${{ matrix.platform }}
+          push: true
+          provenance: false
+          tags: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-${{ matrix.runner.platform == 'linux/amd64' && 'amd64' || 'arm64' }}-${{ matrix.image.base_os }}
+          #tags: |
+          #  akira25/gnuradio-docker-container:3.10-alpine
+          #  akira25/gnuradio-docker-container:latest
+          #  ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
+          #  ghcr.io/akira25/gnuradio-docker-container:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+  merge-and-push:
+    name: Merge and Release Multi-arch Image
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Create Multi-arch Manifests
+        run: |
+          for tag in ${{ env.GR_VERSION }} latest; do
+            docker buildx imagetools create -t ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${tag} \
+              ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-amd64 \
+              ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-arm64
+          done
+        #  for tag in ${{ env.GR_VERSION }}-debian; do
+        #    docker buildx imagetools create -t ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${tag} \
+        #      ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-amd64-debian \
+        #      ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-arm64-debian
+        #  done
+
+      #- name: Cleanup Platform Tags
+      #  run: |
+      #    set -e
+      #    TOKEN=$(curl -s -X POST -H "Content-Type: application/json" \
+      #      -d '{"username": "'${{ secrets.DOCKERHUB_USERNAME }}'", "password": "'${{ secrets.DOCKERHUB_PASSWORD }}'"}' \
+      #      https://hub.docker.com/v2/users/login/ | jq -r .token)
+      #
+      #    for arch in amd64 arm64; do
+      #      IMAGE_URL="https://hub.docker.com/v2/repositories/${{ env.DHUB_REPO }}/tags/${{ env.GR_VERSION }}-${arch}/"
+      #      curl -X DELETE -H "Authorization: Bearer ${TOKEN}" ${IMAGE_URL} || echo "Failed to delete ${arch} tag"
+      #    done
+
+      #- name: Verify Image
+      #  uses: addnab/docker-run-action@v3
+      #  with:
+      #    image: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}
+      #    shell: bash
+      #    run: |
+      #      timeout 30s /entrypoint.sh &
+      #      sleep 5
+      #      appc ls && appc resource
