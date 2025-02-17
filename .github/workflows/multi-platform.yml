@@ -10,7 +10,7 @@ on:
 
 env:
   DHUB_REGISTRY: docker.io
-  DHUB_REPO: akira25/${{ github.repository }}
+  DHUB_REPO: ${{ github.repository }}
   GR_VERSION: "3.10"
   GHCR_REGISTRY: ghcr.io
   GHCR_REPO: ghcr.io/${{ github.repository }}
