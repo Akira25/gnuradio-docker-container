@@ -70,7 +70,7 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
         with:
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ matrix.runner.platform }}
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -94,7 +94,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           provenance: false
-          tags: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}-${{ matrix.image.base_os }}
+          tags: ${{ env.DHUB_REGISTRY }}/${{ env.DHUB_REPO }}:${{ env.GR_VERSION }}-${{ matrix.runner.platform == 'linux/amd64' && 'amd64' || 'arm64' }}-${{ matrix.image.base_os }}
           #tags: |
           #  akira25/gnuradio-docker-container:3.10-alpine
           #  akira25/gnuradio-docker-container:latest
