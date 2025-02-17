@@ -33,6 +33,6 @@ LABEL org.opencontainers.image.source=https://github.com/Akira25/gnuradio-docker
 LABEL org.opencontainers.image.description="A minimal (headless) GNU Radio, packed into an alpine docker container"
 LABEL org.opencontainers.image.licenses=MIT
 
-COPY --from=build /home/abuild/packages/x86_64/gnuradio-3.10.11.0-r2.apk /gnuradio_apks/
-RUN apk add --allow-untrusted --no-cache /gnuradio_apks/gnuradio-3.10.11.0-r2.apk
+COPY --from=build /home/abuild/packages/*/gnuradio-*.apk /gnuradio_apks/
+RUN apk add --allow-untrusted --no-cache /gnuradio_apks/gnuradio-*.apk
 RUN apk add --no-cache zeromq py3-pyzmq
