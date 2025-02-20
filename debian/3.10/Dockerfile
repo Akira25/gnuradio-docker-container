@@ -12,7 +12,7 @@ RUN apt update && apt install build-essential wget cmake debhelper dh-make devsc
 RUN apt install -y \
     dh-python\
     doxygen \
-    libvolk-dev \
+    libvolk2-dev \
     doxygen-latex \
     gir1.2-gtk-3.0\
     gir1.2-pango-1.0\
