@@ -28,7 +28,7 @@ jobs:
           - ubuntu-24.04-arm
         img:
           - alpine-3.10
-          # - debian-3.10
+          - debian-3.10
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
@@ -44,11 +44,11 @@ jobs:
               akira25/gnuradio-docker-container:latest
             #  ghcr.io/akira25/gnuradio-docker-container:3.10-alpine
             #  ghcr.io/akira25/gnuradio-docker-container:latest
-          # - img: debian-3.10
-            # base_os: debian
-            # context: ./debian/3.10/
-            # tags: |
-              # akira25/gnuradio-docker-container:3.10-debian
+          - img: debian-3.10
+            base_os: debian
+            context: ./debian/3.10/
+            tags: |
+              akira25/gnuradio-docker-container:3.10-debian
 
     runs-on: ${{ matrix.runner }}
     permissions:
