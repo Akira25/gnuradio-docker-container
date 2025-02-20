@@ -8,10 +8,12 @@ LABEL org.opencontainers.image.source=https://github.com/Akira25/gnuradio-docker
 LABEL org.opencontainers.image.description="A minimal (headless) GNU Radio, packed into an alpine docker container"
 LABEL org.opencontainers.image.licenses=MIT
 
-RUN apt update && apt install build-essential wget cmake debhelper dh-make devscripts -y
+RUN apt update && apt install build-essential wget cmake debhelper dh-make devscripts dpkg-dev -y
 RUN apt install -y \
     dh-python\
-    doxygen\
+    doxygen \
+    libvolk-dev \
+    doxygen-latex \
     gir1.2-gtk-3.0\
     gir1.2-pango-1.0\
     graphviz\
