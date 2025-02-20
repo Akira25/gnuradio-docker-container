@@ -4,9 +4,7 @@ on:
   release:
     types: [published]
   push:
-    branches: [ "main", "test" ]
-  pull_request:
-    branches: [ "main", "test" ]
+    branches: [ "main" ]
 
 env:
   DHUB_REGISTRY: docker.io
